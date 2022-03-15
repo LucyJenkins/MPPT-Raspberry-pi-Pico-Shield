@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name Custom_MPPT)(type Legacy)(uri ${KIPRJMOD}/Custom_MPPT.lib)(options "")(descr ""))
+)
