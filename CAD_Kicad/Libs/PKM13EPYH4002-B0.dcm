@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP PKM13EPYH4002-B0
+D Transducer piezo PCB 30Vpp 70dB 12.6mm Murata Buzzer
+K
+F http://www.murata.com/~/media/webrenewal/support/library/catalog/products/sound/p37e.ashx
+$ENDCMP
+#
+#End Doc Library
