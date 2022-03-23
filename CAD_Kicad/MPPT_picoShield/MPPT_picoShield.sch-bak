@@ -658,17 +658,6 @@ F 3 "http://www.st.com/content/ccc/resource/technical/document/datasheet/c4/0e/7
 	1    9950 1100
 	1    0    0    -1  
 $EndComp
-$Comp
-L Connector:Screw_Terminal_01x04 J3
-U 1 1 62841410
-P 10350 2150
-F 0 "J3" H 10430 2142 50  0000 L CNN
-F 1 "V_out" H 10430 2051 50  0000 L CNN
-F 2 "TerminalBlock:TerminalBlock_bornier-4_P5.08mm" H 10350 2150 50  0001 C CNN
-F 3 "~" H 10350 2150 50  0001 C CNN
-	1    10350 2150
-	1    0    0    -1  
-$EndComp
 Text GLabel 10000 2050 0    50   Input ~ 0
 Vbat
 $Comp
@@ -1857,4 +1846,99 @@ Wire Wire Line
 Wire Wire Line
 	6950 4400 6900 4400
 Connection ~ 6950 4400
+$Comp
+L Connector:Screw_Terminal_01x04 J3
+U 1 1 62841410
+P 10350 2150
+F 0 "J3" H 10430 2142 50  0000 L CNN
+F 1 "V_out" H 10430 2051 50  0000 L CNN
+F 2 "TerminalBlock:TerminalBlock_bornier-4_P5.08mm" H 10350 2150 50  0001 C CNN
+F 3 "~" H 10350 2150 50  0001 C CNN
+	1    10350 2150
+	1    0    0    -1  
+$EndComp
+Text GLabel 8350 5850 2    50   Input ~ 0
+VCell2_sense
+Text GLabel 8350 5750 2    50   Input ~ 0
+VCell1_sense
+Text GLabel 8350 5650 2    50   Input ~ 0
+Vpv_sense
+$Comp
+L Device:C C31
+U 1 1 6240649C
+P 7500 6050
+F 0 "C31" H 7615 6096 50  0000 L CNN
+F 1 ".1µF" H 7615 6005 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 7538 5900 50  0001 C CNN
+F 3 "~" H 7500 6050 50  0001 C CNN
+	1    7500 6050
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C C32
+U 1 1 624198D1
+P 7900 6050
+F 0 "C32" H 8015 6096 50  0000 L CNN
+F 1 ".1µF" H 8015 6005 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 7938 5900 50  0001 C CNN
+F 3 "~" H 7900 6050 50  0001 C CNN
+	1    7900 6050
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C C33
+U 1 1 6242CB53
+P 8300 6050
+F 0 "C33" H 8415 6096 50  0000 L CNN
+F 1 ".1µF" H 8415 6005 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 8338 5900 50  0001 C CNN
+F 3 "~" H 8300 6050 50  0001 C CNN
+	1    8300 6050
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 6247B261
+P 7500 6200
+F 0 "#PWR?" H 7500 5950 50  0001 C CNN
+F 1 "GND" V 7505 6072 50  0000 R CNN
+F 2 "" H 7500 6200 50  0001 C CNN
+F 3 "" H 7500 6200 50  0001 C CNN
+	1    7500 6200
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 6248E4CC
+P 7900 6200
+F 0 "#PWR?" H 7900 5950 50  0001 C CNN
+F 1 "GND" V 7905 6072 50  0000 R CNN
+F 2 "" H 7900 6200 50  0001 C CNN
+F 3 "" H 7900 6200 50  0001 C CNN
+	1    7900 6200
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 624A16F1
+P 8300 6200
+F 0 "#PWR?" H 8300 5950 50  0001 C CNN
+F 1 "GND" V 8305 6072 50  0000 R CNN
+F 2 "" H 8300 6200 50  0001 C CNN
+F 3 "" H 8300 6200 50  0001 C CNN
+	1    8300 6200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	8300 5900 8300 5850
+Wire Wire Line
+	8300 5850 8350 5850
+Wire Wire Line
+	7900 5750 7900 5900
+Wire Wire Line
+	7900 5750 8350 5750
+Wire Wire Line
+	8350 5650 7500 5650
+Wire Wire Line
+	7500 5650 7500 5900
 $EndSCHEMATC

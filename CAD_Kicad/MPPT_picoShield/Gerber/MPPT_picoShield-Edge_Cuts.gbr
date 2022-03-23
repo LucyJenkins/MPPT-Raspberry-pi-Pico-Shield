@@ -1,0 +1,26 @@
+%TF.GenerationSoftware,KiCad,Pcbnew,(5.1.6)-1*%
+%TF.CreationDate,2022-03-23T15:28:11-04:00*%
+%TF.ProjectId,MPPT_picoShield,4d505054-5f70-4696-936f-536869656c64,rev?*%
+%TF.SameCoordinates,Original*%
+%TF.FileFunction,Profile,NP*%
+%FSLAX46Y46*%
+G04 Gerber Fmt 4.6, Leading zero omitted, Abs format (unit mm)*
+G04 Created by KiCad (PCBNEW (5.1.6)-1) date 2022-03-23 15:28:11*
+%MOMM*%
+%LPD*%
+G01*
+G04 APERTURE LIST*
+%TA.AperFunction,Profile*%
+%ADD10C,0.500000*%
+%TD*%
+G04 APERTURE END LIST*
+D10*
+X0Y-65000000D02*
+X95000000Y-65000000D01*
+X95000000Y0D02*
+X95000000Y-65000000D01*
+X0Y0D02*
+X0Y-65000000D01*
+X0Y0D02*
+X95000000Y0D01*
+M02*
