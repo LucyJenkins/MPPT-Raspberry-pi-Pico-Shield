@@ -1,5 +1,6 @@
 ##Repository of functions and values for simulation purposes only
 from math import exp
+from math import sin
 
 import csv
 
@@ -23,8 +24,10 @@ alpha_sim = 0
 
 sim_step = 0
 
-V_OPEN_PV = 12
-I_SHUNT_PV = .5
+TRACKING_TEST = True #(False: constant characteristics ; True: sinusoidal characteristic for tracking test)
+TRACKING_PERIOD = 5000 #Number of steps to do a full rotation on the tracking
+V_OPEN_PV = 12  #Open voltage of the solar panel
+I_SHUNT_PV = .5 #Short current of the solar panel
 
 SMPS_EFFICIENCY = .85 #85% efficiency on SMPS
 
@@ -57,8 +60,17 @@ def system_update(alpha):
     
     alpha_sim = alpha
     
+    if TRACKING_TEST: #sinusoidal power model
+        factor = .75 + sin(2*3.1415*sim_step/TRACKING_PERIOD)/4
+    else: #simple solar panel model (constant)
+        factor = 1
+    
     v_pv_sim = (1-alpha_sim)*(v_c1_sim+v_c2_sim+.5)/alpha_sim #simulates a buck boost SMPS
-    i_pv_sim = I_SHUNT_PV*(1 - exp(v_pv_sim - V_OPEN_PV)) #simple solar panel model
+        
+    i_pv_sim = (I_SHUNT_PV*factor)*(1 - exp(v_pv_sim - (V_OPEN_PV*factor)))
+    
+    if i_pv_sim < 0:
+        i_pv_sim = 0
     
     i_bat_in_sim = SMPS_EFFICIENCY*(v_pv_sim/(v_c1_sim+v_c2_sim+.5))*i_pv_sim
     i_bat_out_sim = I_BATT_OUT
@@ -74,7 +86,7 @@ def system_update(alpha):
     string = ""
     for i in range(0,len(fields)):
         string = string+fields[i]+": "+str(new_row[i])+" ;"
-    print(string)
+    #print(string)
     
     return 1
 

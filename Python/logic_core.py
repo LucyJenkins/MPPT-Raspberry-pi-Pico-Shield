@@ -23,13 +23,14 @@ FIR_COEF = [-0.003471,-0.004851,-0.004245,
             -0.004245,-0.004851,-0.003471] #digital low pass (FIR) => one low pass fits all
 
 MIN_DUTY_CYCLE = .25 #Minimum duty cycle on the SMPS (to keep function of system)
+DEFAULT_DUTY_CYCLE = .5 #Default duty cycle on the SMPS
 MAX_DUTY_CYCLE = .75 #Maximum duty cycle on the SMPS (to keep function of system)
 DUTY_CYCLE_STEP = .002 #Duty cycle step for the perturb and watch algorithm
 
 MAX_I_BAT_IN = 1 #Maximum possible voltage on the system
 
 ##System variables
-alpha = 0.7
+alpha = DEFAULT_DUTY_CYCLE
 
 v_pv_buffer = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 v_c1_buffer = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
@@ -89,7 +90,7 @@ def data_acquisition():
     global v_pv,v_c1,v_c2,i_pv,i_bat_in,i_bat_out
     global v_pv_buffer,v_c1_buffer,v_c2_buffer,i_pv_buffer,i_bat_in_buffer,i_bat_out_buffer
     
-    print("data_acquisition")
+    #print("data_acquisition")
     
     v_pv = FIR_filter(FIR_COEF,v_pv_buffer,acq_v_pv())
     v_c1 = FIR_filter(FIR_COEF,v_c1_buffer,acq_v_c1())
@@ -108,6 +109,8 @@ def perturb_test(new_alpha,power):
     if (new_alpha > MIN_DUTY_CYCLE) and (new_alpha < MAX_DUTY_CYCLE):
         system_update(new_alpha)
         new_power = int(acq_v_pv() * acq_i_pv() * 1000)
+    else:
+        new_power = -1
     return new_power
 
 ##MPPT algorithm step by small perturbation
@@ -115,7 +118,7 @@ def perturb_test(new_alpha,power):
 def MPPT_step():
     global alpha
     
-    print("MPPT_step")
+    #print("MPPT_step")
     
     power = int(v_pv * i_pv * 1000) #current power to beat (mW)
     
@@ -132,6 +135,13 @@ def MPPT_step():
     if (power_plus > power and power_plus > power_minus): #use this if better than the two others
         alpha = alpha_plus
     
+    #Exploratory mode to look after a working power point
+        #In case the power drops down to 0, we will explore all possible duty cycles to try to catch a working point
+    if (power_plus < 50) and (power < 50) and (power_minus < 50):
+        alpha = alpha + DUTY_CYCLE_STEP
+        if alpha > MAX_DUTY_CYCLE - 2*DUTY_CYCLE_STEP:
+            alpha = MIN_DUTY_CYCLE + 2*DUTY_CYCLE_STEP
+    
     system_update(alpha)
     
     return 1
@@ -141,7 +151,7 @@ def MPPT_step():
 def overcharge_handle():
     global alpha
     
-    print("overcharge_handle")
+    #print("overcharge_handle")
     
     if (i_bat_in > i_bat_out) and ((alpha + DUTY_CYCLE_STEP) < MAX_DUTY_CYCLE): #reduce efficiency of solar panel until battery slightly discharges
         alpha = alpha + DUTY_CYCLE_STEP
@@ -154,7 +164,7 @@ def overcharge_handle():
 
 ##Error handling function (TBD)
 def error_handle():
-    print("error_handle")
+    #print("error_handle")
     return 1
 
 ##Function to corrrect unexpeted errors
@@ -168,7 +178,7 @@ def failsafe():
     if alpha < MIN_DUTY_CYCLE:
         alpha = MIN_DUTY_CYCLE+5*DUTY_CYCLE_STEP
         
-    if alpha > MAX_DUTY_CYCLE
+    if alpha > MAX_DUTY_CYCLE:
         alpha = MAX_DUTY_CYCLE-5*DUTY_CYCLE_STEP
     
     return 1
@@ -198,6 +208,6 @@ def main():
 if __name__ == '__main__':
     init()
     
-    for i in range(0,100):
+    for i in range(0,5000):
         main()
 
