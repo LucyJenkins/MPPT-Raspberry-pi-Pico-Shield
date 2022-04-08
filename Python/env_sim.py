@@ -25,7 +25,7 @@ alpha_sim = 0
 sim_step = 0
 
 TRACKING_TEST = True #(False: constant characteristics ; True: sinusoidal characteristic for tracking test)
-TRACKING_PERIOD = 5000 #Number of steps to do a full rotation on the tracking
+TRACKING_PERIOD = 2500 #Number of steps to do a full rotation on the tracking
 V_OPEN_PV = 12  #Open voltage of the solar panel
 I_SHUNT_PV = .5 #Short current of the solar panel
 

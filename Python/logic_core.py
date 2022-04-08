@@ -49,7 +49,7 @@ i_pv = 0
 i_bat_in = 0
 i_bat_out = 0
 
-##Digital low pass filter for data input clean_up
+##Digital low pass filter for data input clean_up (see if this feature is useful)
 def FIR_filter(coef,buffer,data_in):
     data_out = 0
     
@@ -85,7 +85,7 @@ def init():
         
     return 1
 
-##Data acquisition step for main program loop
+##Data acquisition step for main program loop (may need to be deleted)
 def data_acquisition():
     global v_pv,v_c1,v_c2,i_pv,i_bat_in,i_bat_out
     global v_pv_buffer,v_c1_buffer,v_c2_buffer,i_pv_buffer,i_bat_in_buffer,i_bat_out_buffer
@@ -102,6 +102,7 @@ def data_acquisition():
     
     return 1
 
+##LEGACY##
 ##perturbation test for the MPPT algorithm used
 #returns True if the new duty cycle provides more power than the old duty cycle
 #returns False if the new duty cycle doesn't provide more power
@@ -113,6 +114,7 @@ def perturb_test(new_alpha,power):
         new_power = -1
     return new_power
 
+##LEGACY##
 ##MPPT algorithm step by small perturbation
 #We perturb the system by small increments to see in which direction it is preferable to go for maximum power
 def MPPT_step():
@@ -147,6 +149,56 @@ def MPPT_step():
     return 1
 
 
+## 
+def cost_function(target_current,actual_current):
+    return abs(target_current - actual_current)
+
+## PPT algorithm to track a target current on the battery input sense resistor
+def PPT_step(target_current):
+    
+    global alpha
+    
+    #print("PPT_step")
+    
+    current = acq_i_bat_in()
+    cost = cost_function(target_current,current)
+    
+    #Test with slightly lower duty cycle
+    alpha_minus = alpha - DUTY_CYCLE_STEP
+    current_minus = 0
+    cost_minus = 1000
+    if (alpha_minus > MIN_DUTY_CYCLE):
+        system_update(alpha_minus)
+        current_minus = acq_i_bat_in()
+        cost_minus = cost_function(target_current, current_minus)
+
+    #Test with slightly higher duty cycle
+    alpha_plus = alpha + DUTY_CYCLE_STEP
+    current_plus = 0
+    cost_plus = 1000
+    if (alpha_plus < MAX_DUTY_CYCLE):
+        system_update(alpha_plus)
+        current_plus = acq_i_bat_in()
+        cost_plus = cost_function(target_current, current_plus)
+        
+    #Take a decision on best working point
+    if (cost_minus < cost and cost_minus < cost_plus): #use this if better than the two others
+        alpha = alpha_minus
+    if (cost_plus < cost and cost_plus < cost_minus): #use this if better than the two others
+        alpha = alpha_plus
+    
+    #Exploratory mode to look after a working power point
+        #In case the current drops below 10 mA, we will explore all possible duty cycles to try to catch a working point
+    if (current_plus < .01) and (current < .01) and (current_minus < .01):
+        alpha = alpha + DUTY_CYCLE_STEP
+        if alpha > MAX_DUTY_CYCLE - 2*DUTY_CYCLE_STEP:
+            alpha = MIN_DUTY_CYCLE + 2*DUTY_CYCLE_STEP
+    
+    system_update(alpha)
+    
+    return 1
+
+
 ##Reduce the efficiency of the solar panel until we are within safe limits for battery (no overcharge)
 def overcharge_handle():
     global alpha
@@ -165,6 +217,7 @@ def overcharge_handle():
 ##Error handling function (TBD)
 def error_handle():
     #print("error_handle")
+    major_problem(3)
     return 1
 
 ##Function to corrrect unexpeted errors
@@ -173,41 +226,57 @@ def error_handle():
 def failsafe():
     global alpha
     
-    alpha = int(alpha*1000)/1000
+    alpha = int(alpha*1000)/1000 #correction for floating point inacuracies
     
-    if alpha < MIN_DUTY_CYCLE:
+    if alpha < MIN_DUTY_CYCLE: #correction for alpha below allowable minimum
         alpha = MIN_DUTY_CYCLE+5*DUTY_CYCLE_STEP
         
-    if alpha > MAX_DUTY_CYCLE:
+    if alpha > MAX_DUTY_CYCLE: #correction for duty cycle above maximum
         alpha = MAX_DUTY_CYCLE-5*DUTY_CYCLE_STEP
     
     return 1
     
 
 ##Main program loop of the logic core
-def main():
+def run():
+    
+    target_current = 0
     
     data_acquisition()
     
-    if (v_c1 >= V_UC and v_c1 < V_OC and v_c2 >= V_UC and v_c2 < V_OC):
+    if (v_c1 >= V_UC and v_c1 < V_OC and v_c2 >= V_UC and v_c2 < V_OC): #Charge at maximum intensity
         ##MPPT step for system update
-        MPPT_step()
+        #MPPT_step()
+        target_current = MAX_I_BAT_IN + i_bat_out
     else:
-        if (v_c1 >= V_OC or v_c2 >= V_OC) :
-            ##Do not overcharge a cell
-            overcharge_handle()
+        if (v_c1 >= V_OC or v_c2 >= V_OC) : ##Do not overcharge a cell
+            target_current = i_bat_out
+            
         else:
             ##A problem must be signaled
             error_handle()
+            
+    PPT_step(target_current)
 
     #real implementation should wait a certain number of time before restarting (no need to always update)
             
     #Other functions to ensure program will keep running in expected conditions
     failsafe()
 
+
+
 if __name__ == '__main__':
+    
+    #initialize system
     init()
     
-    for i in range(0,5000):
-        main()
-
+    #run a given amount of loops for simulation
+    if SYS_VAR == "sim":
+        for i in range(0,2000):
+            run()
+    
+    #Run infinetely for on board release
+    if SYS_VAR == "board":
+        while True:
+            run()
+    
