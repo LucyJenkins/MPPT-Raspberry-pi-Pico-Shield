@@ -1,17 +1,45 @@
-##Repository of functions and values for simulation purposes only
+#File: Logic_core.py
+#Author: Lucy Jenkins
+#Description:
+#   Functions and values for simulation purposes only on the MPPT project
+#   This files aims at reproducing the system's onboard behaviour to allow for logic core adjustements without need for the experimental set up
+#
+#   This file features functions which allow:
+#       - Functions to provide in/outs as if the logic core had to interact with its on board environment
+#       - Constant solar panel behaviour to test basic MPPT and PPT functions and stability
+#       - Sinusoidal solar panel behaviour to test tracking behaviour of the algorithm
+#       - Provides theoretical maximums to simulation files (brute force solving) to: best alpha, best power, best current at battery input
+#
+#To do:
+#   - Add simulation support for an imperfect solar panel characteristic (with local minimums and maximums)
+
 from math import exp
 from math import sin
 
+##CSV handle (simulation output)
 import csv
 
-fields = ['sim_step','alpha','V_OPEN_PV','v_pv','v_c1','v_c2','I_SHUNT_PV','i_pv','i_bat_in','i_bat_out','power_pv']
+fields = ['sim_step','alpha','V_OPEN_PV','v_pv','v_c1','v_c2','I_SHUNT_PV','i_pv','i_bat_in','i_bat_out','power_pv','theo_max_alpha','theo_max_i_bat_in','theo_max_power_pv']
 filename = "MPPT_test.csv"
 
 with open(filename,'w') as csvfile:
     csvwriter = csv.writer(csvfile)
     csvwriter.writerow(fields)
 
-##System values
+##Simulation constants
+TRACKING_TEST = True   #(False: constant characteristics ; True: sinusoidal characteristic for tracking test)
+TRACKING_PERIOD = 500  #Number of steps to do a full rotation on the tracking
+
+IMPERFECT_TEST = False #Try to use an imperfect solar panel characteristic
+
+V_OPEN_PV = 14.5       #Open voltage of the solar panel
+I_SHUNT_PV = .1        #Short current of the solar panel
+
+SMPS_EFFICIENCY = .7 #70% efficiency on SMPS
+
+I_BATT_OUT = .05 #50 mAmps on battery output
+
+##Simulation variables
 v_pv_sim = 0
 v_c1_sim = 3.7
 v_c2_sim = 3.7
@@ -23,15 +51,6 @@ i_bat_out_sim = 0
 alpha_sim = 0
 
 sim_step = 0
-
-TRACKING_TEST = True #(False: constant characteristics ; True: sinusoidal characteristic for tracking test)
-TRACKING_PERIOD = 2500 #Number of steps to do a full rotation on the tracking
-V_OPEN_PV = 12  #Open voltage of the solar panel
-I_SHUNT_PV = .5 #Short current of the solar panel
-
-SMPS_EFFICIENCY = .85 #85% efficiency on SMPS
-
-I_BATT_OUT = .25
 
 ##Data acquisition functions
 def acq_v_pv():
@@ -53,11 +72,16 @@ def acq_i_bat_out():
     return i_bat_out_sim
 
 
+
 ##Update function to make logic core and model interact
 #real function should wait for system to react (let's say .5 seconds) to let it update
+#
+#To do:
+#   - Find better factorized way to calculate power points (2 instances of the same calculation here)
 def system_update(alpha):
     global sim_step,alpha_sim,v_pv_sim,v_c1_sim,v_c2_sim,i_pv_sim,i_bat_in_sim,i_bat_out_sim
     
+    ##Simulate for this alpha
     alpha_sim = alpha
     
     if TRACKING_TEST: #sinusoidal power model
@@ -75,17 +99,50 @@ def system_update(alpha):
     i_bat_in_sim = SMPS_EFFICIENCY*(v_pv_sim/(v_c1_sim+v_c2_sim+.5))*i_pv_sim
     i_bat_out_sim = I_BATT_OUT
     
-    #write new simulation step to csv file
+    
+    ##Brute force solve for the maximum theoretical power point ['theo_max_alpha','theo_max_i_bat_in','theo_max_power_pv']
+    a_min = .25
+    a_max = .75
+    a_step = .002
+    
+    i_min = int(a_min/a_step)
+    i_max = int(a_max/a_step)+1
+    
+    best_alpha = a_min
+    best_i_bat_in = 0
+    best_power = 0
+    
+    alpha_test = a_min
+    power = 0
+    
+    for i in range(i_min,i_max):
+        alpha_test = i*a_step
+        
+        v_pv = (1-alpha_test)*(v_c1_sim+v_c2_sim+.5)/alpha_test #simulates a system using a buck boost SMPS
+        i_pv = (I_SHUNT_PV*factor)*(1 - exp(v_pv - (V_OPEN_PV*factor)))
+        if i_pv < 0:
+            i_pv = 0
+        
+        i_bat_in = SMPS_EFFICIENCY*(v_pv/(v_c1_sim+v_c2_sim+.5))*i_pv
+        power = i_pv*v_pv
+        
+        if power > best_power:
+            best_alpha = alpha_test
+            best_i_bat_in = i_bat_in
+            best_power = power
+         
+    
+    ##Write new simulation step to csv file & maximum theoretical point
     sim_step = sim_step + 1
-    new_row = [sim_step,alpha,V_OPEN_PV,v_pv_sim,v_c1_sim,v_c2_sim,I_SHUNT_PV,i_pv_sim,i_bat_in_sim,i_bat_out_sim,v_pv_sim*i_pv_sim]
+    new_row = [sim_step,alpha,V_OPEN_PV,v_pv_sim,v_c1_sim,v_c2_sim,I_SHUNT_PV,i_pv_sim,i_bat_in_sim,i_bat_out_sim,v_pv_sim*i_pv_sim,best_alpha,best_i_bat_in,best_power]
     with open(filename,'a') as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow(new_row)
     
-    #write to console status
-    string = ""
-    for i in range(0,len(fields)):
-        string = string+fields[i]+": "+str(new_row[i])+" ;"
+    #write status to console
+    #string = ""
+    #for i in range(0,len(fields)):
+    #    string = string+fields[i]+": "+str(new_row[i])+" ;"
     #print(string)
     
     return 1
